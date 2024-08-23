@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Snake and Ladder Game</title>
+    <title>Enhanced Snake and Ladder Game</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -11,6 +11,7 @@
             display: flex;
             justify-content: center;
             align-items: center;
+            flex-direction: column;
             height: 100vh;
             margin: 0;
         }
@@ -36,10 +37,15 @@
             width: 20px;
             height: 20px;
             border-radius: 50%;
-            background-color: red;
             position: relative;
             top: -5px;
             left: -5px;
+        }
+        .player1 {
+            background-color: red;
+        }
+        .player2 {
+            background-color: blue;
         }
         .controls {
             margin-top: 20px;
@@ -50,16 +56,43 @@
             margin: 5px;
             cursor: pointer;
         }
+        .history {
+            margin-top: 20px;
+            max-width: 300px;
+            text-align: left;
+            border: 1px solid #ddd;
+            padding: 10px;
+            background-color: #fff;
+            overflow-y: auto;
+            max-height: 150px;
+        }
+        .history p {
+            margin: 5px 0;
+            font-size: 14px;
+        }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <h1>Snake and Ladder Game</h1>
+    <h1>Enhanced Snake and Ladder Game</h1>
+    
+    <div>
+        <input id="player1Name" type="text" placeholder="Enter Player 1 Name" value="Player 1">
+        <input id="player2Name" type="text" placeholder="Enter Player 2 Name" value="Player 2">
+    </div>
+    
     <div id="board" class="board"></div>
+    
     <div class="controls">
         <button onclick="rollDice()">Roll Dice</button>
         <p id="diceResult">Roll the dice to start the game.</p>
+        <button onclick="resetGame()">Reset Game</button>
+    </div>
+    
+    <div class="history">
+        <h3>Game History</h3>
+        <div id="historyLog"></div>
     </div>
 </div>
 
@@ -68,8 +101,11 @@
     const snakes = { 16: 6, 47: 26, 49: 11, 56: 53, 62: 19, 64: 60, 87: 24, 93: 73, 95: 75, 98: 78 };
     const ladders = { 1: 38, 4: 14, 9: 31, 21: 42, 28: 84, 36: 44, 51: 67, 71: 91, 80: 100 };
 
-    let playerPosition = 1;
-
+    let players = [
+        { name: 'Player 1', position: 1, elementClass: 'player1' },
+        { name: 'Player 2', position: 1, elementClass: 'player2' }
+    ];
+    let currentPlayer = 0;
     const boardElement = document.getElementById('board');
 
     function createBoard() {
@@ -78,27 +114,29 @@
             cells += `<div class="cell" id="cell-${i}">${i}</div>`;
         }
         boardElement.innerHTML = cells;
-        updatePlayerPosition();
+        updatePlayerPositions();
     }
 
-    function updatePlayerPosition() {
+    function updatePlayerPositions() {
         document.querySelectorAll('.player').forEach(el => el.remove());
-        const playerElement = document.createElement('div');
-        playerElement.classList.add('player');
-        document.getElementById(`cell-${playerPosition}`).appendChild(playerElement);
+        players.forEach(player => {
+            const playerElement = document.createElement('div');
+            playerElement.classList.add('player', player.elementClass);
+            document.getElementById(`cell-${player.position}`).appendChild(playerElement);
+        });
     }
 
     function rollDice() {
         const dice = Math.floor(Math.random() * 6) + 1;
-        document.getElementById('diceResult').innerText = `You rolled a ${dice}`;
+        document.getElementById('diceResult').innerText = `${players[currentPlayer].name} rolled a ${dice}`;
         movePlayer(dice);
     }
 
     function movePlayer(dice) {
-        let newPosition = playerPosition + dice;
+        let newPosition = players[currentPlayer].position + dice;
 
         if (newPosition > 100) {
-            newPosition = playerPosition;
+            newPosition = players[currentPlayer].position;
         } else {
             if (snakes[newPosition]) {
                 newPosition = snakes[newPosition];
@@ -107,19 +145,30 @@
             }
         }
 
-        playerPosition = newPosition;
-        updatePlayerPosition();
+        const historyLog = document.getElementById('historyLog');
+        historyLog.innerHTML += `<p>${players[currentPlayer].name} moved to position ${newPosition}</p>`;
+        historyLog.scrollTop = historyLog.scrollHeight;
 
-        if (playerPosition === 100) {
-            alert("Congratulations! You've won the game!");
+        players[currentPlayer].position = newPosition;
+        updatePlayerPositions();
+
+        if (players[currentPlayer].position === 100) {
+            alert(`${players[currentPlayer].name} wins!`);
             resetGame();
+        } else {
+            currentPlayer = (currentPlayer + 1) % 2;
         }
     }
 
     function resetGame() {
-        playerPosition = 1;
-        updatePlayerPosition();
+        players = [
+            { name: document.getElementById('player1Name').value || 'Player 1', position: 1, elementClass: 'player1' },
+            { name: document.getElementById('player2Name').value || 'Player 2', position: 1, elementClass: 'player2' }
+        ];
+        currentPlayer = 0;
+        updatePlayerPositions();
         document.getElementById('diceResult').innerText = "Roll the dice to start the game.";
+        document.getElementById('historyLog').innerHTML = "";
     }
 
     createBoard();
